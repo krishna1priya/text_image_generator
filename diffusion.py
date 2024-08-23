@@ -108,9 +108,9 @@ class upSample(nn.Module):
 class switchSequential(nn.Sequential):
     def forward(self, x, prompt, time):
         for layer in self:
-            if isinstance(layer, unetAttentionBlock):          #computes cross attention bw latent and prompt
+            if isinstance(layer, unetAttentionBlock):          #computes cross attention btw latent and prompt
                 x = layer(x, prompt)
-            elif isinstance(layer, unetResidualBlock):         #matches latent with time step
+            elif isinstance(layer, unetResidualBlock):         #latent with time step
                 x = layer(x, time)
             else:
                 x = layer(x)

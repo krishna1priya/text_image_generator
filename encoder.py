@@ -4,7 +4,7 @@ from torch.nn import functional as F
 from decoder import vaeAttentionBlock, vaeResidualBlock
 
 class vaeEncoder(nn.Sequential):
-    def __init__(self):
+    def __init__(self): 
         super().__init__(
             nn.Conv2d(3, 128, kernel_size=3, padding=1), # (batch_size, channel, height, width), channels = 128
             vaeResidualBlock(128, 128),
@@ -19,7 +19,7 @@ class vaeEncoder(nn.Sequential):
             vaeResidualBlock(512, 512), 
             vaeResidualBlock(512, 512), 
             vaeResidualBlock(512, 512), 
-            vaeAttentionBlock(512), 
+            vaeAttentionBlock(512),         #self attention over each pixel
             vaeResidualBlock(512, 512), 
             nn.GroupNorm(32, 512), ##group normalization, #groups = 32, #channels = features = 512
             nn.SiLU(), 
@@ -33,19 +33,12 @@ class vaeEncoder(nn.Sequential):
 
         for module in self:
             if getattr(module, 'stride', None) == (2, 2): ##assymtric padding to right and bottom
-                x = F.pad(x, (0, 1, 0, 1))
-            
+                x = F.pad(x, (0, 1, 0, 1))       
             x = module(x)
         mean, log_variance = torch.chunk(x, 2, dim=1)
         log_variance = torch.clamp(log_variance, -20, 20) #clamping to a range
         variance = log_variance.exp()
         stdev = variance.sqrt()
-
         x = mean + stdev * noise
-        
-        # Scale by a constant
-        # Constant taken from: https://github.com/CompVis/stable-diffusion/blob/21f890f9da3cfbeaba8e2ac3c425ee9e998d5229/configs/stable-diffusion/v1-inference.yaml#L17C1-L17C1
-        # x *= 0.18215
-        
         return x
 

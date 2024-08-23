@@ -3,8 +3,8 @@ import numpy as np
 from tqdm import tqdm
 from ddpm import DDPMSampler
 
-WIDTH = 1024
-HEIGHT = 1024
+WIDTH = 512
+HEIGHT = 512
 LATENTS_WIDTH = WIDTH // 8
 LATENTS_HEIGHT = HEIGHT // 8
 
@@ -64,32 +64,6 @@ def generate(
             raise ValueError("Unknown sampler")
         latents_shape = (1, 4, LATENTS_HEIGHT, LATENTS_WIDTH)
 
-        # if input_image:
-        #     encoder = models["encoder"]
-        #     encoder.to(device)
-
-        #     input_image_tensor = input_image.resize((WIDTH, HEIGHT))        #(h,w,c)
-        #     input_image_tensor = np.array(input_image_tensor)
-        #     input_image_tensor = torch.tensor(input_image_tensor, dtype=torch.float32, device=device)
-        #     input_image_tensor = rescale(input_image_tensor, (0, 255), (-1, 1))
-        #     input_image_tensor = input_image_tensor.unsqueeze(0)            #(batch_size, h,w,c)
-        #     input_image_tensor = input_image_tensor.permute(0, 3, 1, 2)
-
-        #     # (Batch_Size, 4, Latents_Height, Latents_Width)
-        #     encoder_noise = torch.randn(latents_shape, generator=generator, device=device)
-        #     # (Batch_Size, 4, Latents_Height, Latents_Width)
-        #     latents = encoder(input_image_tensor, encoder_noise)
-
-        #     # Add noise to the latents (the encoded input image)
-        #     # (Batch_Size, 4, Latents_Height, Latents_Width)
-        #     sampler.set_strength(strength=strength)
-        #     latents = sampler.add_noise(latents, sampler.timesteps[0])
-
-        #     to_device(encoder)
-        # else:
-        #     # (Batch_Size, 4, Latents_Height, Latents_Width)
-        #     latents = torch.randn(latents_shape, generator=generator, device=device)
-
         diffusion = models["diffusion"]
         diffusion.to(device)
 
@@ -113,12 +87,10 @@ def generate(
 
         decoder = models["decoder"]
         decoder.to(device)    
-        # (Batch_Size, 4, Latents_Height, Latents_Width) -> (Batch_Size, 3, Height, Width)
+
         images = decoder(latents)        #(2*batch_size, 4, latent height, latent width) - (batch_size, 3, height, width)
         to_device(decoder)
-
         images = rescale(images, (-1, 1), (0, 255), clamp=True)
-        # (Batch_Size, Channel, Height, Width) -> (Batch_Size, Height, Width, Channel)
         images = images.permute(0, 2, 3, 1)
         images = images.to("cpu", torch.uint8).numpy()
         return images[0]
